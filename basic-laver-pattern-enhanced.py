@@ -1,3 +1,6 @@
+'''
+This version of blp do not guarantee that there's no infinite descending chain. It's not hard to guarantee it by verify some intermediate informations during the modify operation, but for standard patterns it will never be used, it will only cause more time in computation.
+'''
 import bisect
 
 def _clone_rows(rows):
