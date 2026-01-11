@@ -1,6 +1,3 @@
-'''
-This version of blp do not guarantee that there's no infinite descending chain. It's not hard to guarantee it by verify some intermediate informations during the modify operation, but for standard patterns it will never be used, it will only cause more time in computation.
-'''
 import bisect
 
 def _clone_rows(rows):
@@ -82,26 +79,35 @@ class BasicLaverPattern:
         self.rows.pop()
         self.mask.pop()
 
-    def _transmission_penultimate_and_terminal(self, row_idx, n_value):
+    def _transmission_penultimate_and_terminal_checked(self, row_idx, n_value):
         rows = self.rows
         base = rows[0]
+        if n_value <= 0 or n_value >= len(rows):
+            return None
         row = rows[row_idx]
         l_m = base[row_idx - 1]
         k = _find_index(row, n_value)
         if k is None or k - l_m < 0:
-            raise RuntimeError("Unpleasant.")
+            return None
         threshold = row[k - l_m]
+
         cur = n_value
         prev = None
         visited = {cur}
         while True:
+            if cur <= 0 or cur >= len(rows):
+                return None
             l_s = base[cur - 1]
-            nxt = rows[cur][-l_s - 2]
+            nxt = rows[cur][-l_s - 2]  
+            if nxt > threshold:
+                if _find_index(rows[cur], nxt + 1) is None:
+                    return None
+
             prev, cur = cur, nxt
             if cur <= threshold:
-                return prev, cur
+                return (prev, cur)  
             if cur in visited:
-                raise RuntimeError("Unpleasant.")
+                return None
             visited.add(cur)
 
     def _first_not_copied_in_transmission(self, orig_rows, orig_base, copied_set, row_idx, n_value):
@@ -149,6 +155,7 @@ class BasicLaverPattern:
         initial_marks = [x for x in row0 if x in self.mask[r]]
         before = set(row0)
         added_total = 0
+
         for n in initial_marks:
             if n not in self.mask[r]:
                 continue
@@ -156,26 +163,36 @@ class BasicLaverPattern:
                 continue
             if n <= 0 or n >= len(meta):
                 continue
+
             info = meta[n]
             if not info or not info.get("native_generated", False):
                 continue
-            t, n_terminal = self._transmission_penultimate_and_terminal(r, n)
+
+            tn = self._transmission_penultimate_and_terminal_checked(r, n)
+            if tn is None:
+                continue
+            t, n_terminal = tn
             q = native_done.get(t, 0)
             if q <= 0:
                 continue
+
             target_row = t + q
             left_block = self._slice_right_block(target_row, n_terminal, q)
             right_block = list(range(n + 1, n + q + 1))
+
             new_vals = set(left_block) | set(right_block)
             truly_new = new_vals - before
             if truly_new:
                 added_total += len(truly_new)
                 before |= truly_new
+
             row_set = set(self.rows[r])
             row_set.update(new_vals)
             self.rows[r] = sorted(row_set)
+
             self.mask[r].difference_update(left_block)
             self.mask[r].update(right_block)
+
         if added_total > 0:
             base[r - 1] += (added_total // 2)
 
@@ -203,25 +220,32 @@ class BasicLaverPattern:
         q = k - 1
         if q <= 0:
             return False, 0
+
         marks_m_orig = set(self.mask[m])
         self._shift_values_ge(m, m + 1, q)
+
         if e == 2 * l + 1:
             c = rows[m][:-1]
         else:
             c = rows[m][:l - 1] + rows[m][l:-1]
+
         ext = s[1:][::-1] + list(range(m + 1, m + q + 1))
         rows[m].extend(ext)
         rows[m].sort()
         base[m - 1] += q
+
         d = []
         for i in range(q):
             d_i = c + s[q - i:] + list(range(m + 1, m + i + 2))
             d.append(sorted(d_i))
+
         base[:] = base[:m - 1] + list(range(e - l, e - l + q)) + base[m - 1:]
         rows[:] = rows[:m] + d + rows[m:]
         self.mask[:] = self.mask[:m] + [set() for _ in range(q)] + self.mask[m:]
+
         meta_insert = [{"native_generated": True, "native_q": q} for _ in range(q)]
         meta[:] = meta[:m] + meta_insert + meta[m:]
+
         marks_to_propagate = {x + q if x >= m + 1 else x for x in marks_m_orig}
         for row_idx in range(m, m + q + 1):
             self.mask[row_idx].update(marks_to_propagate)
@@ -233,10 +257,12 @@ class BasicLaverPattern:
     def modify(self, copy_only=False):
         a_prime = self.clone()
         a_prime.cut()
+
         orig_rows = _clone_rows(self.rows)
         orig_mask = _clone_mask(self.mask)
         orig_base = orig_rows[0][:]
         orig_last_mask = set(orig_mask[-1])
+
         rows = self.rows
         base0 = rows[0]
         n_before_cut = len(base0)
@@ -244,25 +270,31 @@ class BasicLaverPattern:
         b = rows[-1][:]
         b0 = b[0]
         p_leftmost = b[0]
+
         self.cut()
         rows = self.rows
         base0 = rows[0]
+
         u = b[-l_last - 2]
         v = b[-l_last - 1] - 1
         base0.extend(base0[u - 1: v])
+
         b_map = {}
         limit = len(b) - l_last
         for i in range(limit):
             key = b[i]
             if key not in b_map:
                 b_map[key] = b[i + l_last]
+
         def map_elem(x):
             if x < b0:
                 return x
             if x > u:
                 return x - u + n_before_cut
             return b_map.get(x, -1)
+
         copied_set = set(range(u, v + 1))
+
         for i in range(v - u + 1):
             row_idx = u + i
             src_row = rows[row_idx]
@@ -275,6 +307,7 @@ class BasicLaverPattern:
                 new_seq.append(new_val)
             new_seq.sort()
             rows.append(new_seq)
+
             new_marks = set()
             src_marks = orig_mask[row_idx]
             if src_marks:
@@ -302,10 +335,13 @@ class BasicLaverPattern:
                     if keep:
                         new_marks.add(map_elem(marked_val))
             self.mask.append(new_marks)
+
         if copy_only:
             return self.clone()
+
         meta = [None] * len(self.rows)
         native_done = {}
+
         m = n_before_cut
         while True:
             base0 = self.rows[0]
@@ -318,6 +354,7 @@ class BasicLaverPattern:
                 m += q + 1
             else:
                 m += 1
+
         return self.clone()
 
     def expand(self, n):
