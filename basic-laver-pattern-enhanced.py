@@ -53,7 +53,7 @@ class BasicLaverPattern:
             line = [space_char] * max_len
             mset = self.mask[i]
             for num in seq:
-                line[num] = 'a' if num in mset else 'o'
+                line[num] = '●' if num in mset else 'o'
             if i <= len(base_list):
                 last_circle_index = seq[-1]
                 result.append(''.join(line[:last_circle_index + 1]) + f" {base_list[i-1]}")
@@ -160,7 +160,7 @@ class BasicLaverPattern:
             if q <= 0:
                 continue
             t, n_terminal = self._transmission_penultimate_and_terminal(r, n)
-            if native_done.get(t) != q:
+            if t not in native_done:
                 continue
             target_row = t + q
             left_block = self._slice_right_block(target_row, n_terminal, q)
