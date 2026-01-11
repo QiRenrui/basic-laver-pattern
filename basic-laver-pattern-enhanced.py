@@ -140,7 +140,7 @@ class BasicLaverPattern:
             raise RuntimeError("Unpleasant.")
         return block
 
-    def _mark_completion_for_row(self, r, meta):
+    def _mark_completion_for_row(self, r, meta, native_done):
         base = self.rows[0]
         row0 = self.rows[r]
         initial_marks = [x for x in row0 if x in self.mask[r]]
@@ -160,6 +160,8 @@ class BasicLaverPattern:
             if q <= 0:
                 continue
             t, n_terminal = self._transmission_penultimate_and_terminal(r, n)
+            if native_done.get(t) != q:
+                continue
             target_row = t + q
             left_block = self._slice_right_block(target_row, n_terminal, q)
             right_block = list(range(n + 1, n + q + 1))
@@ -302,14 +304,19 @@ class BasicLaverPattern:
         if copy_only:
             return self.clone()
         meta = [None] * len(self.rows)
+        native_done = {}
         m = n_before_cut
         while True:
             base0 = self.rows[0]
             if m > len(base0):
                 break
-            self._mark_completion_for_row(m, meta)
+            self._mark_completion_for_row(m, meta, native_done)
             did, q = self._native_completion_step(m, meta)
-            m += (q + 1) if did else 1
+            if did:
+                native_done[m] = q
+                m += q + 1
+            else:
+                m += 1
         return self.clone()
 
     def expand(self, n):
@@ -515,7 +522,7 @@ The author also proved that F(n+3) > f(p_init, 2^n), for any positive integer n.
             else:
                 print("No further simplifications possible.")
         elif user_input == 'I':
-            input_sequence = input("Input the operation sequence (e.g., MCCE2MMCCE2MCMCC): ").strip().upper()
+            input_sequence = input("Input the operation sequence (e.g., MME4C): ").strip().upper()
             if input_sequence == "":
                 pattern_list = [BasicLaverPattern(initial_rows, initial_mask)]
                 operation_sequence = ""
