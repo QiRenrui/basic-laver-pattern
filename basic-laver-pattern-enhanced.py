@@ -53,7 +53,7 @@ class BasicLaverPattern:
             line = [space_char] * max_len
             mset = self.mask[i]
             for num in seq:
-                line[num] = '●' if num in mset else 'o'
+                line[num] = 'a' if num in mset else 'o'
             if i <= len(base_list):
                 last_circle_index = seq[-1]
                 result.append(''.join(line[:last_circle_index + 1]) + f" {base_list[i-1]}")
@@ -156,11 +156,9 @@ class BasicLaverPattern:
             info = meta[n]
             if not info or not info.get("native_generated", False):
                 continue
-            q = int(info.get("native_q", 0))
-            if q <= 0:
-                continue
             t, n_terminal = self._transmission_penultimate_and_terminal(r, n)
-            if t not in native_done:
+            q = native_done.get(t, 0)
+            if q <= 0:
                 continue
             target_row = t + q
             left_block = self._slice_right_block(target_row, n_terminal, q)
@@ -522,7 +520,7 @@ The author also proved that F(n+3) > f(p_init, 2^n), for any positive integer n.
             else:
                 print("No further simplifications possible.")
         elif user_input == 'I':
-            input_sequence = input("Input the operation sequence (e.g., MME4C): ").strip().upper()
+            input_sequence = input("Input the operation sequence (e.g., MCCE2MMCCE2MCMCC): ").strip().upper()
             if input_sequence == "":
                 pattern_list = [BasicLaverPattern(initial_rows, initial_mask)]
                 operation_sequence = ""
