@@ -327,7 +327,7 @@ class BasicLaverPattern:
                         elif tprime is not None:
                             u_img = b_map.get(tprime, None)
                             if u_img is not None and u_img in orig_last_mask:
-                                pos_u = _find_index(new_seq, u_img)
+                                pos_u = _find_index(new_seq, map_elem(marked_val))
                                 if pos_u is not None:
                                     idx_check = pos_u - l_m + 1
                                     if idx_check >= 0 and new_seq[idx_check] <= p_leftmost:
