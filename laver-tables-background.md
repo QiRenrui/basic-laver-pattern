@@ -169,7 +169,7 @@ Y(1,4)
 
 as well as the limit of the Y-sequence.
 
-[SmileLee (Li Yixiao)](https://github.com/SmileLee-lyx), an IMO 2018 gold medalist and a full-score gold medalist in the 2023 Alibaba Global Mathematics Competition, produced the strongest detailed comparison between IBLP and the Y-sequence. His analysis consists of 3,082 lines of explicit correspondences and essentially confirmed my earlier prediction that the Y-sequence limit corresponds in IBLP to
+[SmileLee (Li Yixiao)](https://github.com/SmileLee-lyx), an IMO 2018 gold medalist and a full-score gold medalist in the 2023 Alibaba Global Mathematics Competition, produced the strongest detailed comparison between IBLP and the Y-sequence. His [analysis](https://github.com/QiRenrui/basic-laver-pattern/blob/main/iblp-wmn%20260905.xlsx) consists of 3,859 lines of explicit correspondences and essentially confirmed my earlier prediction that the Y-sequence limit corresponds in IBLP to
 
 ```text
 (1,0)1(2,1,0)1(3,2,1,0)2(4,3,2)1(5,4,3,2)2
